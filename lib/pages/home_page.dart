@@ -48,57 +48,83 @@ class _SomedayShow extends StatefulWidget {
 }
 
 class _SomedayShowState extends State<_SomedayShow> {
-  Timer _imageCycleTimer;
-  int _imageIndex = 0;
+  bool _isFaderVisible = true;
+
+  Future<void> _showFuture;
+  Image _curImage;
   bool _isImageAvailable = false;
+  int _imageIndex = 0;
 
   @override
-  void dispose() {
-    super.dispose();
-    if (_imageCycleTimer != null && _imageCycleTimer.isActive) {
-      _imageCycleTimer.cancel();
-    }
+  void initState() {
+    super.initState();
+    _showFuture = runShow();
   }
 
   @override
   Widget build(BuildContext context) {
-    Image image = Image.network(
+    return FutureBuilder(
+      future: _showFuture,
+      builder: (BuildContext context, AsyncSnapshot snapshot) {
+        if (snapshot.connectionState == ConnectionState.done) {
+          _showFuture = runShow();
+          print('running show again');
+        }
+
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            _isImageAvailable ? _curImage : SizedBox.expand(),
+            AnimatedOpacity(
+              opacity: _isFaderVisible ? 1 : 0,
+              duration: Duration(milliseconds: 500),
+              child: Container(
+                color: Colors.black,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> runShow() async {
+    _isImageAvailable = false;
+    _curImage = Image.network(
       widget.images[_imageIndex],
       fit: BoxFit.cover,
     );
 
-    image.image.resolve(ImageConfiguration()).addListener(ImageStreamListener(
+    final ImageStream stream = _curImage.image.resolve(ImageConfiguration());
+    final Completer<void> completer = Completer<void>();
+    stream.addListener(ImageStreamListener(
       (ImageInfo imageInfo, bool synchronousCall) {
         _isImageAvailable = true;
-        _imageCycleTimer = Timer(Duration(seconds: 10), () {
-          updateImage();
-        });
+        completer.complete();
       },
     ));
 
-    return Container(
-        width: double.infinity,
-        height: double.infinity,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            if (!_isImageAvailable)
-              Container(
-                color: Colors.black,
-              ),
-            image,
-          ],
-        ));
-  }
+    await completer.future;
 
-  void updateImage() {
+    _isFaderVisible = false;
+    setState(() {
+      print('fade out');
+    });
+
+    await Future.delayed(Duration(seconds: 10));
+
+    _isFaderVisible = true;
+    setState(() {
+      print('fade in');
+    });
+
+    await Future.delayed(Duration(seconds: 1));
     setState(() {
       _imageIndex++;
       if (_imageIndex >= widget.images.length) {
         _imageIndex = 0;
       }
-      _isImageAvailable = false;
-      print('updating image...');
+      print('changing image');
     });
   }
 }
