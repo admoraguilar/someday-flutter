@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import '../api_client/api_client.dart';
+// import '../api_client/api_client.dart';
 
 class HomePage extends StatelessWidget {
   @override
@@ -21,18 +21,18 @@ class HomePage extends StatelessWidget {
 }
 
 class _Background extends StatelessWidget {
-  const _Background({Key key}) : super(key: key);
+  const _Background({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Theme.of(context).backgroundColor,
+      color: Theme.of(context).colorScheme.background,
     );
   }
 }
 
 class _Tint extends StatelessWidget {
-  const _Tint({Key key}) : super(key: key);
+  const _Tint({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +43,7 @@ class _Tint extends StatelessWidget {
 }
 
 class _SomedayShow extends StatefulWidget {
-  _SomedayShow({Key key}) : super(key: key);
+  _SomedayShow({Key? key}) : super(key: key);
 
   @override
   _SomedayShowState createState() => _SomedayShowState();
@@ -52,10 +52,10 @@ class _SomedayShow extends StatefulWidget {
 class _SomedayShowState extends State<_SomedayShow> {
   bool _isFaderVisible = true;
 
-  Future<void> _showFuture;
+  Future<void>? _showFuture;
 
-  List<String> _imageSources;
-  Image _curImage;
+  List<String>? _imageSources;
+  Image? _curImage;
   bool _isImageAvailable = false;
   int _imageIndex = 0;
 
@@ -78,7 +78,7 @@ class _SomedayShowState extends State<_SomedayShow> {
         return Stack(
           fit: StackFit.expand,
           children: [
-            _isImageAvailable ? _curImage : SizedBox.expand(),
+            _isImageAvailable ? _curImage! : SizedBox.expand(),
             AnimatedOpacity(
               opacity: _isFaderVisible ? 1 : 0,
               duration: Duration(milliseconds: 500),
@@ -93,9 +93,11 @@ class _SomedayShowState extends State<_SomedayShow> {
   }
 
   Future<void> runShow() async {
-    ImagesApi imagesApi = ImagesApi();
+    print('run show');
 
-    if (_imageSources == null || _imageSources.length <= 0) {
+    // ImagesApi imagesApi = ImagesApi();
+
+    if (_imageSources == null || _imageSources!.length <= 0) {
       // _imageSources = await imagesApi.getImages();
       setStaticImageSources();
     }
@@ -103,7 +105,7 @@ class _SomedayShowState extends State<_SomedayShow> {
     _isImageAvailable = false;
 
     _curImage = Image.network(
-      _imageSources[_imageIndex],
+      _imageSources![_imageIndex],
       fit: BoxFit.cover,
       headers: {
         'Referrer-Policy': 'no-referrer',
@@ -114,18 +116,27 @@ class _SomedayShowState extends State<_SomedayShow> {
         'cache-control': 'max-age=0',
         'content-type': 'image/jpg'
       },
+      errorBuilder: (BuildContext context, Object error, StackTrace? trace) {
+        return Container();
+      },
     );
 
-    final ImageStream stream = _curImage.image.resolve(ImageConfiguration());
-    final Completer<void> completer = Completer<void>();
-    stream.addListener(ImageStreamListener(
-      (ImageInfo imageInfo, bool synchronousCall) {
-        _isImageAvailable = true;
-        completer.complete();
-      },
-    ));
+    if (_curImage != null) {
+      final ImageStream stream = _curImage!.image.resolve(ImageConfiguration());
+      final Completer<void> completer = Completer<void>();
+      stream.addListener(ImageStreamListener(
+        (ImageInfo imageInfo, bool synchronousCall) {
+          _isImageAvailable = true;
+          completer.complete();
+        },
+      ));
 
-    await completer.future;
+      await completer.future;
+
+      print("image found");
+    } else {
+      print("No image");
+    }
 
     // Uint8List bytes = await imagesApi.getImageBytes(_imageSources[_imageIndex]);
     // _curImage = Image.memory(
@@ -149,7 +160,7 @@ class _SomedayShowState extends State<_SomedayShow> {
     await Future.delayed(Duration(seconds: 1));
     setState(() {
       _imageIndex++;
-      if (_imageIndex >= _imageSources.length) {
+      if (_imageIndex >= _imageSources!.length) {
         _imageIndex = 0;
       }
       print('changing image');
@@ -231,12 +242,12 @@ class _SomedayShowState extends State<_SomedayShow> {
     // ];
     //
 
-    _imageSources.shuffle();
+    _imageSources!.shuffle();
   }
 }
 
 class _SomedayTextField extends StatelessWidget {
-  _SomedayTextField({Key key}) : super(key: key);
+  _SomedayTextField({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -287,7 +298,7 @@ class _SomedayTextField extends StatelessWidget {
 }
 
 class _SomedaySoon extends StatelessWidget {
-  const _SomedaySoon({Key key}) : super(key: key);
+  const _SomedaySoon({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
